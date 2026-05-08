@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  cors:
+    enabled: true
+    origins: ["*"]
+    headers: ["Content-Type"]
+  logging:
+    enabled: true
+    format: "text"
+
+paths:
+  - name: users
+    method: GET
+    response: examples/users.json
+
+  - name: users
+    method: POST
+    response: '{"id": 1, "name": "New User"}'
+
+  - name: users/{id}
+    method: GET
+    responseConfig:
+      body: '{"id": "{{.Params.id}}"}'
+      status: 200
+      delay: 100ms
+
+  - name: search
+    method: GET
+    query:
+      q: "type:user"
+    responseConfig:
+      body: '[{"id": 1}]'
