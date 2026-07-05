@@ -35,8 +35,8 @@ func TestRenderResponse(t *testing.T) {
 
 func TestParseDelay(t *testing.T) {
 	tests := []struct {
-		input    string
-		wantErr  bool
+		input   string
+		wantErr bool
 	}{
 		{"100ms", false},
 		{"1s", false},
