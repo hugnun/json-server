@@ -6,7 +6,6 @@ import (
 
 	"github.com/hugnun/json-server/internal"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var validateCmd = &cobra.Command{
@@ -14,13 +13,8 @@ var validateCmd = &cobra.Command{
 	Short: "Validate a config file",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		data, err := os.ReadFile(args[0])
-		if err != nil {
-			return fmt.Errorf("failed to read config: %w", err)
-		}
-		var config internal.Config
-		if err := yaml.Unmarshal(data, &config); err != nil {
-			return fmt.Errorf("invalid YAML: %w", err)
+		if _, err := internal.LoadConfig(args[0]); err != nil {
+			return fmt.Errorf("invalid config: %w", err)
 		}
 		fmt.Println("Config is valid")
 		return nil

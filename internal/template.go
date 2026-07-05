@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"text/template"
 	"time"
@@ -60,12 +58,4 @@ func ParseBody(body string) (map[string]interface{}, error) {
 		}
 	}
 	return result, nil
-}
-
-func ReadBody(req *http.Request) (string, error) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
 }

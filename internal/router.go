@@ -1,106 +1,79 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
+	"time"
 )
 
-type Route struct {
-	Path    Path
-	Handler http.HandlerFunc
+type route struct {
+	rp ResolvedPath
 }
 
 type Router struct {
-	routes []Route
+	exact []route
+	param []route
+	query []route
+	body  []route
 }
 
 func NewRouter() *Router {
-	return &Router{routes: make([]Route, 0)}
+	return &Router{}
 }
 
-func (r *Router) AddRoute(path Path, handler http.HandlerFunc) {
-	r.routes = append(r.routes, Route{Path: path, Handler: handler})
+func (r *Router) Add(rp ResolvedPath) error {
+	switch rp.Priority {
+	case PriorityExact:
+		r.exact = append(r.exact, route{rp})
+	case PriorityParam:
+		r.param = append(r.param, route{rp})
+	case PriorityQuery:
+		r.query = append(r.query, route{rp})
+	case PriorityBody:
+		r.body = append(r.body, route{rp})
+	default:
+		return fmt.Errorf("unknown priority %v for %q", rp.Priority, rp.Name)
+	}
+	return nil
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	for _, route := range r.routes {
-		if matchRoute(route.Path, req) {
-			route.Handler(w, req)
-			return
+	buckets := [][]route{r.exact, r.param, r.query, r.body}
+	for _, bucket := range buckets {
+		for _, rt := range bucket {
+			data, res := Match(req, rt.rp)
+			switch res {
+			case Matched:
+				status, hdr, body, deadline, err := Resolve(req, rt.rp, data)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				writeResponse(w, status, hdr, body, deadline)
+				return
+			case BodyInvalid:
+				http.Error(w, "invalid request body", http.StatusBadRequest)
+				return
+			case NoMatch:
+				continue
+			}
 		}
 	}
 	http.NotFound(w, req)
 }
 
-func matchRoute(path Path, req *http.Request) bool {
-	if path.Method != "" && path.Method != req.Method {
-		return false
-	}
-
-	if !matchPath(path.Name, req.URL.Path) {
-		return false
-	}
-
-	if path.Query != nil {
-		for k, v := range path.Query {
-			if req.URL.Query().Get(k) != v {
-				return false
-			}
+func writeResponse(w http.ResponseWriter, status int, hdr http.Header, body []byte, deadline time.Time) {
+	for k, vs := range hdr {
+		for _, v := range vs {
+			w.Header().Add(k, v)
 		}
 	}
-
-	// Body matching is handled in the handler since we need to read the request body
-	// Return true here to allow the route to be matched; actual body check happens in handler
-
-	return true
-}
-
-func matchPath(pattern, path string) bool {
-	if pattern == path {
-		return true
-	}
-
-	if strings.HasPrefix(path, "/") && !strings.HasPrefix(pattern, "/") {
-		pattern = "/" + pattern
-	}
-
-	patternParts := strings.Split(pattern, "/")
-	pathParts := strings.Split(path, "/")
-
-	if len(patternParts) != len(pathParts) {
-		return false
-	}
-
-	for i, part := range patternParts {
-		if strings.HasPrefix(part, "{") && strings.HasSuffix(part, "}") {
-			continue
-		}
-		if part != pathParts[i] {
-			return false
+	if !deadline.IsZero() {
+		remaining := time.Until(deadline)
+		if remaining > 0 {
+			time.Sleep(remaining)
 		}
 	}
-
-	return true
-}
-
-func ExtractPathParams(pattern, path string) map[string]string {
-	params := make(map[string]string)
-
-	if strings.HasPrefix(path, "/") && !strings.HasPrefix(pattern, "/") {
-		pattern = "/" + pattern
-	}
-
-	patternParts := strings.Split(pattern, "/")
-	pathParts := strings.Split(path, "/")
-
-	for i, part := range patternParts {
-		if strings.HasPrefix(part, "{") && strings.HasSuffix(part, "}") {
-			key := strings.Trim(part, "{}")
-			if i < len(pathParts) {
-				params[key] = pathParts[i]
-			}
-		}
-	}
-
-	return params
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
 }
