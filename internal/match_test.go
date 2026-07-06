@@ -62,10 +62,10 @@ func TestMatch(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		rp        ResolvedPath
-		req       *http.Request
-		wantRes   MatchResult
+		name       string
+		rp         ResolvedPath
+		req        *http.Request
+		wantRes    MatchResult
 		wantParams map[string]string
 		wantQuery  map[string]string
 		wantBody   map[string]interface{}
@@ -77,10 +77,10 @@ func TestMatch(t *testing.T) {
 			wantRes: Matched,
 		},
 		{
-			name:    "param match",
-			rp:      ResolvedPath{Name: "users/{id}", Method: "GET"},
-			req:     mkReq("GET", "/users/42", ""),
-			wantRes: Matched,
+			name:       "param match",
+			rp:         ResolvedPath{Name: "users/{id}", Method: "GET"},
+			req:        mkReq("GET", "/users/42", ""),
+			wantRes:    Matched,
 			wantParams: map[string]string{"id": "42"},
 		},
 		{
@@ -96,10 +96,10 @@ func TestMatch(t *testing.T) {
 			wantRes: Matched,
 		},
 		{
-			name:    "query match",
-			rp:      ResolvedPath{Name: "search", Method: "GET", Query: map[string]string{"q": "x"}},
-			req:     mkReq("GET", "/search?q=x", ""),
-			wantRes: Matched,
+			name:      "query match",
+			rp:        ResolvedPath{Name: "search", Method: "GET", Query: map[string]string{"q": "x"}},
+			req:       mkReq("GET", "/search?q=x", ""),
+			wantRes:   Matched,
 			wantQuery: map[string]string{"q": "x"},
 		},
 		{
@@ -109,10 +109,10 @@ func TestMatch(t *testing.T) {
 			wantRes: NoMatch,
 		},
 		{
-			name:    "body contains match",
-			rp:      ResolvedPath{Name: "login", Method: "POST", BodyRule: &BodyMatch{Contains: "username"}},
-			req:     mkReq("POST", "/login", `{"username":"bob","password":"x"}`),
-			wantRes: Matched,
+			name:     "body contains match",
+			rp:       ResolvedPath{Name: "login", Method: "POST", BodyRule: &BodyMatch{Contains: "username"}},
+			req:      mkReq("POST", "/login", `{"username":"bob","password":"x"}`),
+			wantRes:  Matched,
 			wantBody: map[string]interface{}{"username": "bob", "password": "x"},
 		},
 		{

@@ -9,8 +9,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Priority is the structural class of a ResolvedPath, used by the
+// router to order match attempts. Most specific first.
 type Priority int
 
+// Priority classes, ordered most-specific to least-specific.
 const (
 	PriorityExact Priority = iota
 	PriorityParam
@@ -18,6 +21,7 @@ const (
 	PriorityBody
 )
 
+// String returns the lower-case name of the priority class.
 func (p Priority) String() string {
 	switch p {
 	case PriorityExact:
@@ -33,6 +37,9 @@ func (p Priority) String() string {
 	}
 }
 
+// ResolvedPath is the normalised form of a Path produced by the
+// ConfigLoader. The Path/PathAdvanced ambiguity is resolved here and
+// the priority class is computed from structural shape.
 type ResolvedPath struct {
 	Name     string
 	Method   string
@@ -45,12 +52,18 @@ type ResolvedPath struct {
 	Priority Priority
 }
 
+// LoadedConfig is a parsed config together with the resolved routes
+// derived from it.
 type LoadedConfig struct {
 	Server   Server         `yaml:"server"`
 	Resolved []ResolvedPath `yaml:"-"`
 }
 
+// LoadConfig reads and parses a YAML config file from the given path,
+// resolving each declared path into a ResolvedPath with its priority class
+// assigned.
 func LoadConfig(path string) (LoadedConfig, error) {
+	// #nosec G304 -- path is a user-supplied CLI argument by design.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return LoadedConfig{}, fmt.Errorf("read config: %w", err)
@@ -75,11 +88,11 @@ func LoadConfig(path string) (LoadedConfig, error) {
 
 func resolve(p Path) (ResolvedPath, error) {
 	rp := ResolvedPath{
-		Name:    p.Name,
-		Method:  p.Method,
-		Status:  http.StatusOK,
-		Headers: map[string]string{},
-		Query:   p.Query,
+		Name:     p.Name,
+		Method:   p.Method,
+		Status:   http.StatusOK,
+		Headers:  map[string]string{},
+		Query:    p.Query,
 		BodyRule: p.Body,
 	}
 

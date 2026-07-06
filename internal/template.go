@@ -9,15 +9,21 @@ import (
 	"time"
 )
 
+// TemplateData is the data passed to the response template: path
+// params, query values, and (if the matched route required it) the
+// parsed request body.
 type TemplateData struct {
 	Params map[string]string
 	Query  map[string]string
-	Body   map[string]interface{}
+	Body   map[string]any
 }
 
+// RenderResponse parses body as a Go template with the {{json ...}}
+// helper, then executes it with data. Parse and execute errors are
+// wrapped with positional context.
 func RenderResponse(body string, data TemplateData) (string, error) {
 	funcMap := template.FuncMap{
-		"json": func(v interface{}) string {
+		"json": func(v any) string {
 			b, _ := json.Marshal(v)
 			return string(b)
 		},
@@ -37,6 +43,8 @@ func RenderResponse(body string, data TemplateData) (string, error) {
 	return buf.String(), nil
 }
 
+// ParseDelay parses a Go duration string (e.g. "500ms", "2s"). The
+// empty string yields a zero duration with no error.
 func ParseDelay(delayStr string) (time.Duration, error) {
 	if delayStr == "" {
 		return 0, nil
@@ -44,15 +52,18 @@ func ParseDelay(delayStr string) (time.Duration, error) {
 	return time.ParseDuration(delayStr)
 }
 
-func ParseBody(body string) (map[string]interface{}, error) {
-	var result map[string]interface{}
+// ParseBody decodes body as JSON into a map. If the JSON decode fails,
+// it falls back to URL-encoded form parsing, returning the first key's
+// values when a key has multiple entries.
+func ParseBody(body string) (map[string]any, error) {
+	var result map[string]any
 	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
-		values, err := url.ParseQuery(body)
-		if err != nil {
-			return nil, err
+		values, perr := url.ParseQuery(body)
+		if perr != nil {
+			return nil, perr
 		}
-		result = make(map[string]interface{})
+		result = make(map[string]any)
 		for k, v := range values {
 			result[k] = v
 		}

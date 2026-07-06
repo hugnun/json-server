@@ -7,14 +7,18 @@ import (
 	"strings"
 )
 
+// MatchResult is the tri-state outcome of a Match call. BodyInvalid
+// maps to HTTP 400 at the Router.
 type MatchResult int
 
+// Match outcomes.
 const (
 	Matched MatchResult = iota
 	NoMatch
 	BodyInvalid
 )
 
+// String returns the lower-case name of the match outcome.
 func (r MatchResult) String() string {
 	switch r {
 	case Matched:
@@ -28,6 +32,10 @@ func (r MatchResult) String() string {
 	}
 }
 
+// Match tests whether req satisfies rp's name, method, query, and
+// body rules. On Matched, the returned TemplateData carries the
+// path params, query values, and (if the rule requires it) the parsed
+// body. The body is read once here and reused by the Response module.
 func Match(req *http.Request, rp ResolvedPath) (TemplateData, MatchResult) {
 	if !matchMethod(rp.Method, req.Method) {
 		return TemplateData{}, NoMatch
@@ -39,7 +47,7 @@ func Match(req *http.Request, rp ResolvedPath) (TemplateData, MatchResult) {
 		return TemplateData{}, NoMatch
 	}
 
-	var bodyData map[string]interface{}
+	var bodyData map[string]any
 	if rp.BodyRule != nil {
 		bodyStr, err := readBody(req)
 		if err != nil {
@@ -115,6 +123,9 @@ func matchPath(pattern, path string) bool {
 	return true
 }
 
+// ExtractPathParams returns the values of the {name} placeholders in
+// pattern, looked up positionally in path. Unknown placeholders are
+// dropped; missing path parts yield an empty string.
 func ExtractPathParams(pattern, path string) map[string]string {
 	params := make(map[string]string)
 	if strings.HasPrefix(path, "/") && !strings.HasPrefix(pattern, "/") {

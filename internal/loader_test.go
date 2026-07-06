@@ -116,7 +116,7 @@ func TestResolve_Advanced(t *testing.T) {
 
 func TestResolve_AdvancedDefaultStatus(t *testing.T) {
 	rp, err := resolve(Path{
-		Name: "x",
+		Name:             "x",
 		ResponseAdvanced: &ResponseAdvanced{Body: "ok"},
 	})
 	if err != nil {

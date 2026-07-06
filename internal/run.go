@@ -8,6 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Build constructs the HTTP handler for cfg: a Router that owns all
+// resolved routes, wrapped in the configured CORS, logging, and
+// default-headers middleware.
 func Build(cfg LoadedConfig) (http.Handler, error) {
 	router := NewRouter()
 	for _, rp := range cfg.Resolved {
@@ -31,6 +34,9 @@ func Build(cfg LoadedConfig) (http.Handler, error) {
 	return handler, nil
 }
 
+// Run is the cobra RunE for the serve command. It loads the config at
+// args[0], applies the --port override if set, builds the handler, and
+// starts the HTTP server. ListenAndServe failures are returned.
 func Run(cmd *cobra.Command, args []string) error {
 	cfg, err := LoadConfig(args[0])
 	if err != nil {
@@ -47,6 +53,7 @@ func Run(cmd *cobra.Command, args []string) error {
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	fmt.Printf("Starting server on %s\n", addr)
+	// #nosec G114 -- dev tool: no Read/Write timeouts needed; controlled shutdown is out of scope.
 	return http.ListenAndServe(addr, handler)
 }
 

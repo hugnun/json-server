@@ -1,3 +1,87 @@
 version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
 linters:
   default: standard
+  enable:
+    - revive
+    - gocritic
+    - errorlint
+    - nilerr
+    - bodyclose
+    - noctx
+    - gosec
+    - gocognit
+    - cyclop
+    - dupl
+    - unparam
+    - goprintffuncname
+    - makezero
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+        - experimental
+      disabled-checks:
+        - hugeParam
+        - rangeValCopy
+        - tooManyResultsChecker
+        - dupImport
+    revive:
+      severity: warning
+      rules:
+        - name: var-naming
+        - name: exported
+        - name: error-strings
+        - name: error-naming
+        - name: error-return
+        - name: blank-imports
+        - name: dot-imports
+        - name: early-return
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: use-any
+    cyclop:
+      max-complexity: 15
+    gocognit:
+      min-complexity: 20
+    dupl:
+      threshold: 100
+    gosec:
+      excludes:
+        - G104
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+          - gocritic
+          - dupl
+          - gocognit
+          - cyclop
+          - unparam
+          - revive
+          - bodyclose
+          - noctx
+
+formatters:
+  enable:
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hugnun/json-server
+
+output:
+  formats:
+    text:
+      path: stdout
+      colors: true
+      print-issued-lines: true
+      print-linter-name: true

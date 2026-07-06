@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hugnun/json-server/internal"
 	"github.com/spf13/cobra"
+
+	"github.com/hugnun/json-server/internal"
 )
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate a config file",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		if _, err := internal.LoadConfig(args[0]); err != nil {
 			return fmt.Errorf("invalid config: %w", err)
 		}
@@ -33,6 +34,7 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 }
 
+// Execute runs the root cobra command. It exits the process on error.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {

@@ -10,6 +10,9 @@ type route struct {
 	rp ResolvedPath
 }
 
+// Router matches incoming requests to ResolvedPaths in four priority
+// buckets (exact, param, query, body) and dispatches to the response
+// pipeline.
 type Router struct {
 	exact []route
 	param []route
@@ -17,10 +20,13 @@ type Router struct {
 	body  []route
 }
 
+// NewRouter returns an empty Router.
 func NewRouter() *Router {
 	return &Router{}
 }
 
+// Add registers rp in the bucket for its Priority class. The router
+// only accepts the four known priorities.
 func (r *Router) Add(rp ResolvedPath) error {
 	switch rp.Priority {
 	case PriorityExact:
